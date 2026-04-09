@@ -149,7 +149,7 @@ export default function RoomPage({ user }: { user: User }) {
         &larr; Back
       </button>
 
-      <div className="card bg-base-100 shadow-md overflow-hidden">
+      <div className="card bg-base-100 shadow-md overflow-hidden animate-card-expand">
         {/* Banner */}
         {room.bannerUrl && (
           <img
