@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useState, useRef, useEffect } from "react";
+import { useParams, useNavigate, useLocation } from "react-router";
 import type { User } from "firebase/auth";
 import { useRooms, updateRoom, deleteRoom } from "./useRooms";
 import { useNotes, createNote, updateNote, deleteNote } from "./useNotes";
@@ -10,7 +10,7 @@ import {
   deleteFlashcard,
 } from "./useFlashcards";
 import { useUsers, getUserName } from "./useUsers";
-import { ListIcon, GridIcon } from "./Icons";
+import { ListIcon, GridIcon, PencilIcon, XMarkIcon } from "./Icons";
 import Markdown from "./Markdown";
 import RoomFormModal from "./RoomFormModal";
 import NoteFormModal from "./NoteFormModal";
@@ -21,6 +21,8 @@ import type { Flashcard } from "./useFlashcards";
 export default function RoomPage({ user }: { user: User }) {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const origin = (location.state as { originX?: number; originY?: number }) ?? {};
   const { rooms } = useRooms();
   const room = rooms.find((r) => r.id === roomId);
   const { users } = useUsers();
@@ -37,6 +39,15 @@ export default function RoomPage({ user }: { user: User }) {
   const [cardModal, setCardModal] = useState(false);
   const [editingCard, setEditingCard] = useState<Flashcard | null>(null);
   const [flipped, setFlipped] = useState<Record<string, boolean>>({});
+  const [viewingNote, setViewingNote] = useState<Note | null>(null);
+  const viewNoteRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const el = viewNoteRef.current;
+    if (!el) return;
+    if (viewingNote) el.showModal();
+    else el.close();
+  }, [viewingNote]);
 
   const isOwner = room?.createdBy === user.uid;
 
@@ -149,7 +160,17 @@ export default function RoomPage({ user }: { user: User }) {
         &larr; Back
       </button>
 
-      <div className="card bg-base-100 shadow-md overflow-hidden animate-card-expand">
+      <div
+        className="card bg-base-100 shadow-md overflow-hidden animate-card-expand"
+        ref={(el) => {
+          if (el && origin.originX != null && origin.originY != null) {
+            const rect = el.getBoundingClientRect();
+            const ox = origin.originX - rect.left;
+            const oy = origin.originY - rect.top;
+            el.style.transformOrigin = `${ox}px ${oy}px`;
+          }
+        }}
+      >
         {/* Banner */}
         {room.bannerUrl && (
           <img
@@ -262,18 +283,19 @@ export default function RoomPage({ user }: { user: User }) {
                   {notes.map((note) => (
                     <div
                       key={note.id}
-                      className="card bg-base-100 shadow-sm"
+                      className="card bg-base-100 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                      onClick={() => setViewingNote(note)}
                     >
                       <div className="card-body">
                         <h3 className="card-title text-base">{note.title}</h3>
-                        <Markdown className={notesView === "grid" ? "line-clamp-4" : ""}>
+                        <Markdown className="line-clamp-4">
                           {note.content}
                         </Markdown>
                         <div className="flex items-center justify-between mt-2">
                           <span className="text-xs opacity-50">
                             {getUserName(users, note.createdBy)} &middot; {new Date(note.updatedAt).toLocaleString()}
                           </span>
-                          <div className="flex gap-1">
+                          <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                             <button
                               className="btn btn-ghost btn-xs"
                               onClick={() => setEditingNote(note)}
@@ -398,6 +420,38 @@ export default function RoomPage({ user }: { user: User }) {
           </div>
         </div>
       </div>
+
+      {/* Note detail modal */}
+      <dialog ref={viewNoteRef} className="modal" onClose={() => setViewingNote(null)}>
+        {viewingNote && (
+          <div className="modal-box max-w-4xl max-h-[85vh] flex flex-row gap-4">
+            <div className="flex-1 overflow-y-auto">
+              <h3 className="font-bold text-lg mb-1">{viewingNote.title}</h3>
+              <p className="text-xs opacity-50 mb-4">
+                {getUserName(users, viewingNote.createdBy)} &middot; {new Date(viewingNote.updatedAt).toLocaleString()}
+              </p>
+              <Markdown>{viewingNote.content}</Markdown>
+            </div>
+            <div className="flex flex-col gap-2 border-l border-base-200 pl-4 shrink-0">
+              <button
+                className="btn btn-outline btn-primary btn-sm"
+                onClick={() => {
+                  setEditingNote(viewingNote);
+                  setViewingNote(null);
+                }}
+              >
+                <PencilIcon /> Edit
+              </button>
+              <button className="btn btn-ghost btn-sm" onClick={() => setViewingNote(null)}>
+                <XMarkIcon /> Close
+              </button>
+            </div>
+          </div>
+        )}
+        <form method="dialog" className="modal-backdrop">
+          <button>close</button>
+        </form>
+      </dialog>
 
       {/* Modals */}
       <RoomFormModal
