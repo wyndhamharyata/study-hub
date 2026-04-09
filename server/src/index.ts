@@ -101,6 +101,22 @@ const app = new Hono<{ Bindings: Env }>()
       return c.json({ error: String(err) }, 500);
     }
   })
+  .post('/api/rooms/:roomId/banner', async (c) => {
+    const roomId = c.req.param('roomId');
+    try {
+      const formData = await c.req.formData();
+      const file = formData.get('file') as File | null;
+      if (!file) {
+        return c.json({ error: 'No file provided' }, 400);
+      }
+      const key = `banners/${roomId}-${file.name}`;
+      await c.env.StudyHubBucket.put(key, file);
+      const url = `https://${c.env.BUCKET_DOMAIN}/${key}`;
+      return c.json({ success: true, url });
+    } catch (err) {
+      return c.json({ error: String(err) }, 500);
+    }
+  })
   .get('*', async (c) => {
     try {
       const assetResponse = await c.env.ASSETS.fetch(c.req.url);

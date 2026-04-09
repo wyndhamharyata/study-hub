@@ -1,5 +1,21 @@
 @import "tailwindcss";
 
+@keyframes card-expand {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-card-expand {
+  animation: card-expand 0.25s ease-out;
+}
+@plugin "@tailwindcss/typography";
+
 @plugin "daisyui" {
   themes: marknotes-light, marknotes-dark --prefersdark;
 }

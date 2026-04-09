@@ -8,6 +8,7 @@ export interface Room {
   description: string;
   createdBy: string;
   createdAt: number;
+  bannerUrl?: string;
 }
 
 export function useRooms() {
@@ -35,7 +36,10 @@ export function createRoom(room: Room) {
   return set(ref(db, `studyhub/rooms/${room.id}`), room);
 }
 
-export function updateRoom(roomId: string, data: { name: string; description: string }) {
+export function updateRoom(
+  roomId: string,
+  data: { name: string; description: string; bannerUrl?: string }
+) {
   return update(ref(db, `studyhub/rooms/${roomId}`), data);
 }
 

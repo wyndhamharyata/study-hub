@@ -3,8 +3,12 @@ import { useState, useEffect, useRef } from "react";
 interface RoomFormModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: { name: string; description: string }) => void;
-  initialValues?: { name: string; description: string };
+  onSubmit: (data: {
+    name: string;
+    description: string;
+    bannerFile?: File;
+  }) => void;
+  initialValues?: { name: string; description: string; bannerUrl?: string };
   title: string;
 }
 
@@ -16,12 +20,18 @@ export default function RoomFormModal({
   title,
 }: RoomFormModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
 
   useEffect(() => {
     setName(initialValues?.name ?? "");
     setDescription(initialValues?.description ?? "");
+    setBannerFile(null);
+    setPreview(initialValues?.bannerUrl ?? null);
+    if (fileRef.current) fileRef.current.value = "";
   }, [open, initialValues]);
 
   useEffect(() => {
@@ -31,9 +41,21 @@ export default function RoomFormModal({
     else el.close();
   }, [open]);
 
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null;
+    setBannerFile(file);
+    if (file) {
+      setPreview(URL.createObjectURL(file));
+    }
+  }
+
   const handleSubmit = () => {
     if (!name.trim()) return;
-    onSubmit({ name: name.trim(), description: description.trim() });
+    onSubmit({
+      name: name.trim(),
+      description: description.trim(),
+      bannerFile: bannerFile ?? undefined,
+    });
   };
 
   return (
@@ -49,11 +71,30 @@ export default function RoomFormModal({
           />
           <textarea
             className="textarea textarea-bordered w-full"
-            placeholder="Description (optional)"
+            placeholder="Description (supports **markdown**)"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
           />
+          <label className="form-control w-full">
+            <div className="label">
+              <span className="label-text">Banner image (optional)</span>
+            </div>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="file-input file-input-bordered w-full"
+              onChange={handleFileChange}
+            />
+          </label>
+          {preview && (
+            <img
+              src={preview}
+              alt="Banner preview"
+              className="rounded-box h-32 w-full object-cover"
+            />
+          )}
         </div>
         <div className="modal-action">
           <button className="btn btn-ghost btn-sm" onClick={onClose}>

@@ -10,13 +10,29 @@ export default $config({
   },
   async run() {
     const secrets = new sst.cloudflare.Kv("Secrets");
+    const bucket = new sst.cloudflare.Bucket("StudyHubBucket");
+    const bucketDomain = "studyhub-assets.mwyndham.dev";
+
+    const customDomain = new cloudflare.R2CustomDomain(
+      "StudyHubBucketDomain",
+      {
+        accountId: process.env.CLOUDFLARE_DEFAULT_ACCOUNT_ID ?? "",
+        bucketName: bucket.name,
+        domain: bucketDomain,
+        enabled: true,
+        zoneId: process.env.CLOUDFLARE_DOMAIN_ZONE_ID ?? "",
+      }
+    );
 
     const hono = new sst.cloudflare.Worker("StudyHub", {
       url: true,
       handler: "./server/src/index.ts",
       assets: { directory: "./dist" },
       domain: "studyhub.mwyndham.dev",
-      link: [secrets],
+      link: [secrets, bucket, customDomain],
+      environment: {
+        BUCKET_DOMAIN: bucketDomain,
+      },
     });
 
     new sst.x.DevCommand("LocalVite", {
