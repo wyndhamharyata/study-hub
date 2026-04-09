@@ -9,6 +9,7 @@ import {
   updateFlashcard,
   deleteFlashcard,
 } from "./useFlashcards";
+import { useUsers, getUserName } from "./useUsers";
 import RoomFormModal from "./RoomFormModal";
 import NoteFormModal from "./NoteFormModal";
 import FlashcardFormModal from "./FlashcardFormModal";
@@ -20,6 +21,7 @@ export default function RoomPage({ user }: { user: User }) {
   const navigate = useNavigate();
   const { rooms } = useRooms();
   const room = rooms.find((r) => r.id === roomId);
+  const { users } = useUsers();
 
   const { notes, loading: notesLoading } = useNotes(roomId!);
   const { flashcards, loading: cardsLoading } = useFlashcards(roomId!);
@@ -133,7 +135,7 @@ export default function RoomPage({ user }: { user: User }) {
                 <p className="opacity-70 mt-1">{room.description}</p>
               )}
               <p className="text-xs opacity-50 mt-2">
-                Created {new Date(room.createdAt).toLocaleDateString()}
+                Created by {getUserName(users, room.createdBy)} &middot; {new Date(room.createdAt).toLocaleDateString()}
               </p>
             </div>
             {isOwner && (
@@ -206,7 +208,7 @@ export default function RoomPage({ user }: { user: User }) {
                         </p>
                         <div className="flex items-center justify-between mt-2">
                           <span className="text-xs opacity-50">
-                            {new Date(note.updatedAt).toLocaleString()}
+                            {getUserName(users, note.createdBy)} &middot; {new Date(note.updatedAt).toLocaleString()}
                           </span>
                           <div className="flex gap-1">
                             <button
@@ -281,7 +283,7 @@ export default function RoomPage({ user }: { user: User }) {
                         </p>
                         <div className="flex items-center justify-between mt-2">
                           <span className="text-xs opacity-50">
-                            Click to {flipped[card.id] ? "show question" : "reveal answer"}
+                            {getUserName(users, card.createdBy)} &middot; Click to {flipped[card.id] ? "show question" : "reveal answer"}
                           </span>
                           <div
                             className="flex gap-1"

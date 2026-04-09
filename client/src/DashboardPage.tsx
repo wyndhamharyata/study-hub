@@ -2,10 +2,12 @@ import { useState } from "react";
 import { Link } from "react-router";
 import type { User } from "firebase/auth";
 import { useRooms, createRoom, updateRoom, deleteRoom } from "./useRooms";
+import { useUsers, getUserName } from "./useUsers";
 import RoomFormModal from "./RoomFormModal";
 
 export default function DashboardPage({ user }: { user: User }) {
   const { rooms, loading } = useRooms();
+  const { users } = useUsers();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<{
     id: string;
@@ -83,7 +85,7 @@ export default function DashboardPage({ user }: { user: User }) {
                   <p className="opacity-70 line-clamp-3">{room.description}</p>
                 )}
                 <div className="text-xs opacity-40 mt-3 border-t border-base-300 pt-2">
-                  {new Date(room.createdAt).toLocaleDateString()}
+                  {getUserName(users, room.createdBy)} &middot; {new Date(room.createdAt).toLocaleDateString()}
                 </div>
                 {room.createdBy === user.uid && (
                   <div className="flex justify-end mt-2 gap-1">
