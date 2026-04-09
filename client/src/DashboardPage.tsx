@@ -1,12 +1,31 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { useNavigate } from "react-router";
 import type { User } from "firebase/auth";
 import { useRooms, createRoom, updateRoom, deleteRoom } from "./useRooms";
 import { useUsers, getUserName } from "./useUsers";
 import Markdown from "./Markdown";
 import RoomFormModal from "./RoomFormModal";
 
+async function uploadBanner(
+  roomId: string,
+  file: File
+): Promise<string | null> {
+  const formData = new FormData();
+  formData.append("file", file);
+  try {
+    const res = await fetch(`/api/rooms/${roomId}/banner`, {
+      method: "POST",
+      body: formData,
+    });
+    const data = await res.json();
+    return data.url ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export default function DashboardPage({ user }: { user: User }) {
+  const navigate = useNavigate();
   const { rooms, loading } = useRooms();
   const { users } = useUsers();
   const [modalOpen, setModalOpen] = useState(false);
@@ -14,25 +33,45 @@ export default function DashboardPage({ user }: { user: User }) {
     id: string;
     name: string;
     description: string;
+    bannerUrl?: string;
   } | null>(null);
 
-  function handleCreate(data: { name: string; description: string }) {
+  async function handleCreate(data: {
+    name: string;
+    description: string;
+    bannerFile?: File;
+  }) {
     const id = crypto.randomUUID();
+    let bannerUrl: string | undefined;
+    if (data.bannerFile) {
+      bannerUrl = (await uploadBanner(id, data.bannerFile)) ?? undefined;
+    }
     createRoom({
       id,
       name: data.name,
       description: data.description,
       createdBy: user.uid,
       createdAt: Date.now(),
+      bannerUrl,
     });
     setModalOpen(false);
   }
 
-  function handleEdit(data: { name: string; description: string }) {
+  async function handleEdit(data: {
+    name: string;
+    description: string;
+    bannerFile?: File;
+  }) {
     if (!editingRoom) return;
+    let bannerUrl = editingRoom.bannerUrl;
+    if (data.bannerFile) {
+      bannerUrl =
+        (await uploadBanner(editingRoom.id, data.bannerFile)) ?? bannerUrl;
+    }
     updateRoom(editingRoom.id, {
       name: data.name,
       description: data.description,
+      ...(bannerUrl ? { bannerUrl } : {}),
     });
     setEditingRoom(null);
   }
@@ -73,43 +112,60 @@ export default function DashboardPage({ user }: { user: User }) {
           {rooms.map((room) => (
             <div
               key={room.id}
-              className="card bg-base-100 shadow-md hover:shadow-lg transition-shadow"
+              className="card shadow-md overflow-hidden relative cursor-pointer hover:shadow-lg transition-shadow"
+              style={
+                room.bannerUrl
+                  ? { backgroundImage: `url(${room.bannerUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+                  : undefined
+              }
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                navigate(`/rooms/${room.id}`, {
+                  state: {
+                    originX: rect.left + rect.width / 2,
+                    originY: rect.top + rect.height / 2,
+                  },
+                });
+              }}
             >
-              <div className="card-body">
-                <Link
-                  to={`/rooms/${room.id}`}
-                  className="card-title link link-hover"
-                >
+              <div className={`card-body ${room.bannerUrl ? "" : "bg-base-100"}`}>
+                <h3 className={`card-title ${room.bannerUrl ? "text-white drop-shadow-md" : ""}`}>
                   {room.name}
-                </Link>
-                {room.description && (
-                  <Markdown className="opacity-70 line-clamp-3">{room.description}</Markdown>
-                )}
-                <div className="text-xs opacity-40 mt-3 border-t border-base-300 pt-2">
-                  {getUserName(users, room.createdBy)} &middot; {new Date(room.createdAt).toLocaleDateString()}
-                </div>
-                {room.createdBy === user.uid && (
-                  <div className="flex justify-end mt-2 gap-1">
-                    <button
-                      className="btn btn-ghost btn-xs"
-                      onClick={() =>
-                        setEditingRoom({
-                          id: room.id,
-                          name: room.name,
-                          description: room.description,
-                        })
-                      }
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="btn btn-ghost btn-xs text-error"
-                      onClick={() => handleDelete(room.id)}
-                    >
-                      Delete
-                    </button>
+                </h3>
+                <div className={room.bannerUrl ? "bg-base-100/80 backdrop-blur-sm rounded-box p-3 -mx-1" : ""}>
+                  {room.description && (
+                    <Markdown className="opacity-70 line-clamp-3">
+                      {room.description}
+                    </Markdown>
+                  )}
+                  <div className="text-xs opacity-40 mt-3 border-t border-base-300 pt-2">
+                    {getUserName(users, room.createdBy)} &middot;{" "}
+                    {new Date(room.createdAt).toLocaleDateString()}
                   </div>
-                )}
+                  {room.createdBy === user.uid && (
+                    <div className="flex justify-end mt-2 gap-1" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        className="btn btn-ghost btn-xs"
+                        onClick={() =>
+                          setEditingRoom({
+                            id: room.id,
+                            name: room.name,
+                            description: room.description,
+                            bannerUrl: room.bannerUrl,
+                          })
+                        }
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="btn btn-ghost btn-xs text-error"
+                        onClick={() => handleDelete(room.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ))}

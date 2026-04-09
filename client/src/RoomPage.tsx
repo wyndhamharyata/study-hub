@@ -40,10 +40,30 @@ export default function RoomPage({ user }: { user: User }) {
 
   const isOwner = room?.createdBy === user.uid;
 
-  function handleEditRoom(data: { name: string; description: string }) {
+  async function handleEditRoom(data: {
+    name: string;
+    description: string;
+    bannerFile?: File;
+  }) {
+    let bannerUrl = room?.bannerUrl;
+    if (data.bannerFile) {
+      const formData = new FormData();
+      formData.append("file", data.bannerFile);
+      try {
+        const res = await fetch(`/api/rooms/${roomId}/banner`, {
+          method: "POST",
+          body: formData,
+        });
+        const json = (await res.json()) as { url?: string };
+        if (json.url) bannerUrl = json.url;
+      } catch {
+        // keep existing banner
+      }
+    }
     updateRoom(roomId!, {
       name: data.name,
       description: data.description,
+      ...(bannerUrl ? { bannerUrl } : {}),
     });
     setEditRoom(false);
   }
@@ -130,6 +150,15 @@ export default function RoomPage({ user }: { user: User }) {
       </button>
 
       <div className="card bg-base-100 shadow-md overflow-hidden">
+        {/* Banner */}
+        {room.bannerUrl && (
+          <img
+            src={room.bannerUrl}
+            alt={`${room.name} banner`}
+            className="w-full h-48 object-cover"
+          />
+        )}
+
         {/* Room header */}
         <div className="px-6 pt-6 pb-4 border-b border-base-200">
           <div className="flex items-start justify-between">
@@ -375,7 +404,7 @@ export default function RoomPage({ user }: { user: User }) {
         open={editRoom}
         onClose={() => setEditRoom(false)}
         onSubmit={handleEditRoom}
-        initialValues={{ name: room.name, description: room.description }}
+        initialValues={{ name: room.name, description: room.description, bannerUrl: room.bannerUrl }}
         title="Edit Room"
       />
       <NoteFormModal

@@ -7,6 +7,15 @@ export default defineConfig({
     tailwindcss(),
     react(),
   ],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://studyhub.mwyndham.dev',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
+  },
   build: {
     outDir: '../dist',
     emptyOutDir: true,
