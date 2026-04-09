@@ -1,4 +1,4 @@
-# StudyHub — Checkpoint 2
+# StudyHub — Checkpoint 2 (65%)
 
 Platform kolaborasi belajar real-time berbasis cloud. Pengguna dapat membuat study room, berbagi catatan, dan berlatih dengan flashcard.
 
