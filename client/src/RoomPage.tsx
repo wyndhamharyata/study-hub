@@ -10,6 +10,7 @@ import {
   deleteFlashcard,
 } from "./useFlashcards";
 import { useUsers, getUserName } from "./useUsers";
+import { ListIcon, GridIcon } from "./Icons";
 import RoomFormModal from "./RoomFormModal";
 import NoteFormModal from "./NoteFormModal";
 import FlashcardFormModal from "./FlashcardFormModal";
@@ -27,6 +28,8 @@ export default function RoomPage({ user }: { user: User }) {
   const { flashcards, loading: cardsLoading } = useFlashcards(roomId!);
 
   const [tab, setTab] = useState<"notes" | "flashcards">("notes");
+  const [notesView, setNotesView] = useState<"list" | "grid">("list");
+  const [cardsView, setCardsView] = useState<"list" | "grid">("grid");
   const [editRoom, setEditRoom] = useState(false);
   const [noteModal, setNoteModal] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
@@ -179,7 +182,23 @@ export default function RoomPage({ user }: { user: User }) {
           {/* Notes section */}
           {tab === "notes" && (
             <div>
-              <div className="flex items-center justify-end mb-4">
+              <div className="flex items-center justify-between mb-4">
+                <div className="join">
+                  <button
+                    className={`join-item btn btn-sm ${notesView === "list" ? "btn-primary" : ""}`}
+                    onClick={() => setNotesView("list")}
+                    title="List view"
+                  >
+                    <ListIcon />
+                  </button>
+                  <button
+                    className={`join-item btn btn-sm ${notesView === "grid" ? "btn-primary" : ""}`}
+                    onClick={() => setNotesView("grid")}
+                    title="Grid view"
+                  >
+                    <GridIcon />
+                  </button>
+                </div>
                 <button
                   className="btn btn-primary btn-sm"
                   onClick={() => setNoteModal(true)}
@@ -195,7 +214,13 @@ export default function RoomPage({ user }: { user: User }) {
               ) : notes.length === 0 ? (
                 <p className="text-center opacity-60 py-8">No notes yet.</p>
               ) : (
-                <div className="flex flex-col gap-4">
+                <div
+                  className={
+                    notesView === "grid"
+                      ? "grid grid-cols-1 md:grid-cols-2 gap-4"
+                      : "flex flex-col gap-4"
+                  }
+                >
                   {notes.map((note) => (
                     <div
                       key={note.id}
@@ -203,7 +228,7 @@ export default function RoomPage({ user }: { user: User }) {
                     >
                       <div className="card-body">
                         <h3 className="card-title text-base">{note.title}</h3>
-                        <p className="whitespace-pre-wrap">
+                        <p className={`whitespace-pre-wrap${notesView === "grid" ? " line-clamp-4" : ""}`}>
                           {note.content}
                         </p>
                         <div className="flex items-center justify-between mt-2">
@@ -236,7 +261,23 @@ export default function RoomPage({ user }: { user: User }) {
           {/* Flashcards section */}
           {tab === "flashcards" && (
             <div>
-              <div className="flex items-center justify-end mb-4">
+              <div className="flex items-center justify-between mb-4">
+                <div className="join">
+                  <button
+                    className={`join-item btn btn-sm ${cardsView === "list" ? "btn-primary" : ""}`}
+                    onClick={() => setCardsView("list")}
+                    title="List view"
+                  >
+                    <ListIcon />
+                  </button>
+                  <button
+                    className={`join-item btn btn-sm ${cardsView === "grid" ? "btn-primary" : ""}`}
+                    onClick={() => setCardsView("grid")}
+                    title="Grid view"
+                  >
+                    <GridIcon />
+                  </button>
+                </div>
                 <button
                   className="btn btn-primary btn-sm"
                   onClick={() => setCardModal(true)}
@@ -252,7 +293,13 @@ export default function RoomPage({ user }: { user: User }) {
               ) : flashcards.length === 0 ? (
                 <p className="text-center opacity-60 py-8">No flashcards yet.</p>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div
+                  className={
+                    cardsView === "grid"
+                      ? "grid grid-cols-1 md:grid-cols-2 gap-4"
+                      : "flex flex-col gap-4"
+                  }
+                >
                   {flashcards.map((card) => (
                     <div
                       key={card.id}
