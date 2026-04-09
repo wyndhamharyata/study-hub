@@ -86,8 +86,11 @@ Fitur tambahan dari checkpoint-2:
 npm install
 cd client && npm install && cd ..
 
-# Development (via SST multiplexer)
+# Development — jalankan SST multiplexer
 npm run dev
+# SST multiplexer akan muncul, gunakan untuk:
+# - Start "LocalVite" untuk menjalankan Vite dev server (localhost:5173)
+# - Start "RebuildClient" untuk build ulang client
 
 # Deploy ke Cloudflare
 npm run deploy
