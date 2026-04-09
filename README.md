@@ -49,14 +49,17 @@ Platform kolaborasi belajar real-time berbasis cloud. Pengguna dapat membuat stu
 ### Checkpoint 3 — Polish & Fitur Lanjutan
 - **Markdown rendering** untuk deskripsi room dan konten notes (`react-markdown` + Tailwind Typography)
 - **Side menu navigation** menggantikan tabs — DaisyUI menu component dengan layout flex (sidebar desktop, horizontal mobile)
-- **Room banner image** via Cloudflare R2 — upload dalam modal, tampil sebagai full hero image di room detail dan card background di dashboard (dengan frosted glass overlay)
+- **Room banner image** via Cloudflare R2 — drag-and-drop upload dengan inline preview, tampil sebagai full hero image di room detail dan card background di dashboard (dengan frosted glass overlay)
 - **Note detail modal** — klik note card untuk lihat full content dengan markdown rendering, scrollable, action buttons di samping
 - **Card expand animation** — transisi scale-up dari posisi card yang diklik ke room detail
 - Room detail sebagai satu card besar dengan **debossed content area** (`bg-base-200 shadow-inner`)
+- **Flashcard drag-and-drop reorder** — urutan tersimpan di Firebase, konsisten untuk semua user (@dnd-kit)
+- **Mobile bottom sheet** — modal tampil sebagai bottom sheet dengan slide-up animation pada mobile
+- **Responsive layout** — sidebar room info pada desktop, compact navbar pada mobile, floating profile pada room detail
+- **Description read-more modal** pada mobile (truncated 3 baris + "Read more")
 - Seluruh room card menjadi clickable touch target
 - View toggle active state menggunakan `btn-primary`
 - Vite proxy untuk development (`/api` -> production worker)
-- Creator info dengan separator line pada dashboard cards
 
 ## Firebase Realtime Database Schema
 
@@ -65,7 +68,7 @@ Platform kolaborasi belajar real-time berbasis cloud. Pengguna dapat membuat stu
   /users/{uid}          -> { id, name, email, verified }
   /rooms/{roomId}       -> { id, name, description, createdBy, createdAt, bannerUrl? }
   /notes/{roomId}/{id}  -> { id, title, content, createdBy, createdAt, updatedAt }
-  /flashcards/{roomId}/{id} -> { id, question, answer, createdBy, createdAt, updatedAt }
+  /flashcards/{roomId}/{id} -> { id, question, answer, createdBy, createdAt, updatedAt, order? }
 ```
 
 ## Domain
