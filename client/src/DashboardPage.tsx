@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import type { User } from "firebase/auth";
 import { useRooms, createRoom, updateRoom, deleteRoom } from "./useRooms";
 import { useUsers, getUserName } from "./useUsers";
+import Markdown from "./Markdown";
 import RoomFormModal from "./RoomFormModal";
 
 export default function DashboardPage({ user }: { user: User }) {
@@ -82,7 +83,7 @@ export default function DashboardPage({ user }: { user: User }) {
                   {room.name}
                 </Link>
                 {room.description && (
-                  <p className="opacity-70 line-clamp-3">{room.description}</p>
+                  <Markdown className="opacity-70 line-clamp-3">{room.description}</Markdown>
                 )}
                 <div className="text-xs opacity-40 mt-3 border-t border-base-300 pt-2">
                   {getUserName(users, room.createdBy)} &middot; {new Date(room.createdAt).toLocaleDateString()}

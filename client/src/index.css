@@ -14,6 +14,7 @@
 .animate-card-expand {
   animation: card-expand 0.25s ease-out;
 }
+@plugin "@tailwindcss/typography";
 
 @plugin "daisyui" {
   themes: marknotes-light, marknotes-dark --prefersdark;

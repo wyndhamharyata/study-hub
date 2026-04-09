@@ -11,6 +11,7 @@ import {
 } from "./useFlashcards";
 import { useUsers, getUserName } from "./useUsers";
 import { ListIcon, GridIcon } from "./Icons";
+import Markdown from "./Markdown";
 import RoomFormModal from "./RoomFormModal";
 import NoteFormModal from "./NoteFormModal";
 import FlashcardFormModal from "./FlashcardFormModal";
@@ -135,7 +136,7 @@ export default function RoomPage({ user }: { user: User }) {
             <div>
               <h2 className="text-2xl font-bold">{room.name}</h2>
               {room.description && (
-                <p className="opacity-70 mt-1">{room.description}</p>
+                <Markdown className="opacity-70 mt-1">{room.description}</Markdown>
               )}
               <p className="text-xs opacity-50 mt-2">
                 Created by {getUserName(users, room.createdBy)} &middot; {new Date(room.createdAt).toLocaleDateString()}
@@ -228,9 +229,9 @@ export default function RoomPage({ user }: { user: User }) {
                     >
                       <div className="card-body">
                         <h3 className="card-title text-base">{note.title}</h3>
-                        <p className={`whitespace-pre-wrap${notesView === "grid" ? " line-clamp-4" : ""}`}>
+                        <Markdown className={notesView === "grid" ? "line-clamp-4" : ""}>
                           {note.content}
-                        </p>
+                        </Markdown>
                         <div className="flex items-center justify-between mt-2">
                           <span className="text-xs opacity-50">
                             {getUserName(users, note.createdBy)} &middot; {new Date(note.updatedAt).toLocaleString()}
