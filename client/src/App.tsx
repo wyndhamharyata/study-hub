@@ -6,6 +6,7 @@ import { auth, db } from "./firebase";
 import { useAuth } from "./useAuth";
 import EmailVerificationGate from "./EmailVerificationGate";
 import DashboardPage from "./DashboardPage";
+import RoomPage from "./RoomPage";
 
 const LoginPage = lazy(() => import("./LoginPage"));
 const HomePage = lazy(() => import("./HomePage"));
@@ -62,7 +63,7 @@ function AuthShell() {
         </div>
       </div>
       <Routes>
-        <Route path="/rooms/:roomId" element={<div className="p-6">Room detail coming soon...</div>} />
+        <Route path="/rooms/:roomId" element={<RoomPage user={user} />} />
         <Route path="*" element={<DashboardPage user={user} />} />
       </Routes>
     </div>
