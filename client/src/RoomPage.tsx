@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router";
-import type { User } from "firebase/auth";
+import { signOut, type User } from "firebase/auth";
+import { auth } from "./firebase";
 import { useRooms, updateRoom, deleteRoom } from "./useRooms";
 import { useNotes, createNote, updateNote, deleteNote } from "./useNotes";
 import {
@@ -8,12 +9,27 @@ import {
   createFlashcard,
   updateFlashcard,
   deleteFlashcard,
+  reorderFlashcards,
 } from "./useFlashcards";
 import { useUsers, getUserName } from "./useUsers";
 import RoomFormModal from "./RoomFormModal";
 import NoteFormModal from "./NoteFormModal";
 import FlashcardFormModal from "./FlashcardFormModal";
 import { ListIcon, GridIcon, PencilIcon, XMarkIcon } from "./Icons";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  rectSortingStrategy,
+} from "@dnd-kit/sortable";
+import SortableFlashcard from "./SortableFlashcard";
 import Markdown from "./Markdown";
 import type { Note } from "./useNotes";
 import type { Flashcard } from "./useFlashcards";
@@ -40,7 +56,16 @@ export default function RoomPage({ user }: { user: User }) {
   const [editingCard, setEditingCard] = useState<Flashcard | null>(null);
   const [flipped, setFlipped] = useState<Record<string, boolean>>({});
   const [viewingNote, setViewingNote] = useState<Note | null>(null);
+  const [showDesc, setShowDesc] = useState(false);
+  const descModalRef = useRef<HTMLDialogElement>(null);
   const viewNoteRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const el = descModalRef.current;
+    if (!el) return;
+    if (showDesc) el.showModal();
+    else el.close();
+  }, [showDesc]);
 
   useEffect(() => {
     const el = viewNoteRef.current;
@@ -48,6 +73,25 @@ export default function RoomPage({ user }: { user: User }) {
     if (viewingNote) el.showModal();
     else el.close();
   }, [viewingNote]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = flashcards.findIndex((c) => c.id === active.id);
+    const newIndex = flashcards.findIndex((c) => c.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = [...flashcards];
+    const [moved] = reordered.splice(oldIndex, 1);
+    reordered.splice(newIndex, 0, moved);
+
+    const updates = reordered.map((card, i) => ({ id: card.id, order: i }));
+    reorderFlashcards(roomId!, updates);
+  }
 
   const isOwner = room?.createdBy === user.uid;
 
@@ -153,6 +197,17 @@ export default function RoomPage({ user }: { user: User }) {
 
   return (
     <div className="max-w-5xl mx-auto p-6">
+      {/* Desktop floating profile */}
+      <div className="hidden md:flex fixed top-3 right-6 z-50 items-center gap-2 bg-base-100 rounded-box shadow-sm px-3 py-1.5">
+        <span className="text-xs opacity-70">{user.email}</span>
+        <button
+          className="btn btn-outline btn-xs"
+          onClick={() => signOut(auth)}
+        >
+          Sign Out
+        </button>
+      </div>
+
       <button
         className="btn btn-ghost btn-sm mb-4"
         onClick={() => navigate("/")}
@@ -180,61 +235,98 @@ export default function RoomPage({ user }: { user: User }) {
           />
         )}
 
-        {/* Room header */}
-        <div className="px-6 pt-6 pb-4 border-b border-base-200">
-          <div className="flex items-start justify-between">
-            <div>
-              <h2 className="text-2xl font-bold">{room.name}</h2>
+        {/* Room header — mobile only */}
+        <div className="md:hidden px-6 pt-6 pb-4 border-b border-base-200">
+          <h2 className="text-2xl font-bold">{room.name}</h2>
+          {room.description && (
+            <div className="mt-1">
+              <Markdown className="opacity-70 line-clamp-3">{room.description}</Markdown>
+              <button
+                className="btn btn-link btn-xs px-0 mt-1"
+                onClick={() => setShowDesc(true)}
+              >
+                Read more
+              </button>
+            </div>
+          )}
+          <p className="text-xs opacity-50 mt-2">
+            Created by {getUserName(users, room.createdBy)} &middot; {new Date(room.createdAt).toLocaleDateString()}
+          </p>
+          {isOwner && (
+            <div className="flex gap-2 mt-3">
+              <button
+                className="btn btn-ghost btn-xs"
+                onClick={() => setEditRoom(true)}
+              >
+                Edit
+              </button>
+              <button
+                className="btn btn-ghost btn-xs text-error"
+                onClick={handleDeleteRoom}
+              >
+                Delete
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Sidebar + content layout */}
+        <div className="flex flex-col md:flex-row">
+          {/* Sidebar: room info (desktop) + section menu */}
+          <div className="md:w-64 shrink-0 border-b md:border-b-0 md:border-r border-base-200">
+            {/* Room info — desktop only */}
+            <div className="hidden md:block p-4 pb-3">
+              <h2 className="text-xl font-bold">{room.name}</h2>
               {room.description && (
-                <Markdown className="opacity-70 mt-1">{room.description}</Markdown>
+                <div className="max-h-[40vh] overflow-y-auto mt-1">
+                  <Markdown className="opacity-70">{room.description}</Markdown>
+                </div>
               )}
               <p className="text-xs opacity-50 mt-2">
                 Created by {getUserName(users, room.createdBy)} &middot; {new Date(room.createdAt).toLocaleDateString()}
               </p>
+              {isOwner && (
+                <div className="flex gap-2 mt-3">
+                  <button
+                    className="btn btn-ghost btn-xs"
+                    onClick={() => setEditRoom(true)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="btn btn-ghost btn-xs text-error"
+                    onClick={handleDeleteRoom}
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
+              <div className="divider my-2"></div>
             </div>
-            {isOwner && (
-              <div className="flex gap-2">
-                <button
-                  className="btn btn-ghost btn-sm"
-                  onClick={() => setEditRoom(true)}
-                >
-                  Edit
-                </button>
-                <button
-                  className="btn btn-ghost btn-sm text-error"
-                  onClick={handleDeleteRoom}
-                >
-                  Delete
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
 
-        {/* Side menu + content layout */}
-        <div className="flex flex-col md:flex-row">
-          {/* Side menu */}
-          <ul className="menu gap-1 md:w-56 md:min-h-[300px] menu-horizontal md:menu-vertical w-full border-b md:border-b-0 md:border-r border-base-200 p-4">
-            <li className="menu-title hidden md:block">Sections</li>
-            <li>
-              <button
-                className={`rounded-sm ${tab === "notes" ? "bg-accent/15 font-semibold" : ""}`}
-                onClick={() => setTab("notes")}
-              >
-                Notes
-                <span className="badge badge-sm">{notes.length}</span>
-              </button>
-            </li>
-            <li>
-              <button
-                className={`rounded-sm ${tab === "flashcards" ? "bg-accent/15 font-semibold" : ""}`}
-                onClick={() => setTab("flashcards")}
-              >
-                Flashcards
-                <span className="badge badge-sm">{flashcards.length}</span>
-              </button>
-            </li>
-          </ul>
+            {/* Section menu */}
+            <ul className="menu gap-1 menu-horizontal md:menu-vertical w-full p-4 md:pt-0">
+              <li className="menu-title hidden md:block">Sections</li>
+              <li>
+                <button
+                  className={`rounded-sm ${tab === "notes" ? "bg-accent/15 font-semibold" : ""}`}
+                  onClick={() => setTab("notes")}
+                >
+                  Notes
+                  <span className="badge badge-sm">{notes.length}</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  className={`rounded-sm ${tab === "flashcards" ? "bg-accent/15 font-semibold" : ""}`}
+                  onClick={() => setTab("flashcards")}
+                >
+                  Flashcards
+                  <span className="badge badge-sm">{flashcards.length}</span>
+                </button>
+              </li>
+            </ul>
+          </div>
 
           {/* Content area */}
           <div className="flex-1 min-w-0 p-6 bg-base-200 shadow-inner rounded-br-box">
@@ -242,7 +334,7 @@ export default function RoomPage({ user }: { user: User }) {
           {tab === "notes" && (
             <div>
               <div className="flex items-center justify-between mb-4">
-                <div className="join">
+                <div className="join hidden md:flex">
                   <button
                     className={`join-item btn btn-sm ${notesView === "list" ? "btn-primary" : ""}`}
                     onClick={() => setNotesView("list")}
@@ -322,7 +414,7 @@ export default function RoomPage({ user }: { user: User }) {
           {tab === "flashcards" && (
             <div>
               <div className="flex items-center justify-between mb-4">
-                <div className="join">
+                <div className="join hidden md:flex">
                   <button
                     className={`join-item btn btn-sm ${cardsView === "list" ? "btn-primary" : ""}`}
                     onClick={() => setCardsView("list")}
@@ -353,67 +445,45 @@ export default function RoomPage({ user }: { user: User }) {
               ) : flashcards.length === 0 ? (
                 <p className="text-center opacity-60 py-8">No flashcards yet.</p>
               ) : (
-                <div
-                  className={
-                    cardsView === "grid"
-                      ? "grid grid-cols-1 md:grid-cols-2 gap-4"
-                      : "flex flex-col gap-4"
-                  }
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
                 >
-                  {flashcards.map((card) => (
+                  <SortableContext
+                    items={flashcards.map((c) => c.id)}
+                    strategy={
+                      cardsView === "grid"
+                        ? rectSortingStrategy
+                        : verticalListSortingStrategy
+                    }
+                  >
                     <div
-                      key={card.id}
-                      className={`card shadow-sm cursor-pointer transition-colors ${
-                        flipped[card.id]
-                          ? "bg-success/15"
-                          : "bg-warning/15"
-                      }`}
-                      onClick={() =>
-                        setFlipped((prev) => ({
-                          ...prev,
-                          [card.id]: !prev[card.id],
-                        }))
+                      className={
+                        cardsView === "grid"
+                          ? "grid grid-cols-1 md:grid-cols-2 gap-4"
+                          : "flex flex-col gap-4"
                       }
                     >
-                      <div className="card-body">
-                        <div
-                          className={`badge badge-sm mb-1 ${
-                            flipped[card.id]
-                              ? "badge-success"
-                              : "badge-warning"
-                          }`}
-                        >
-                          {flipped[card.id] ? "Answer" : "Question"}
-                        </div>
-                        <p className="whitespace-pre-wrap">
-                          {flipped[card.id] ? card.answer : card.question}
-                        </p>
-                        <div className="flex items-center justify-between mt-2">
-                          <span className="text-xs opacity-50">
-                            {getUserName(users, card.createdBy)} &middot; Click to {flipped[card.id] ? "show question" : "reveal answer"}
-                          </span>
-                          <div
-                            className="flex gap-1"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <button
-                              className="btn btn-ghost btn-xs"
-                              onClick={() => setEditingCard(card)}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              className="btn btn-ghost btn-xs text-error"
-                              onClick={() => handleDeleteCard(card.id)}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                      </div>
+                      {flashcards.map((card) => (
+                        <SortableFlashcard
+                          key={card.id}
+                          card={card}
+                          flipped={!!flipped[card.id]}
+                          onFlip={() =>
+                            setFlipped((prev) => ({
+                              ...prev,
+                              [card.id]: !prev[card.id],
+                            }))
+                          }
+                          creatorName={getUserName(users, card.createdBy)}
+                          onEdit={() => setEditingCard(card)}
+                          onDelete={() => handleDeleteCard(card.id)}
+                        />
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </SortableContext>
+                </DndContext>
               )}
             </div>
           )}
@@ -421,20 +491,34 @@ export default function RoomPage({ user }: { user: User }) {
         </div>
       </div>
 
+      {/* Description modal — mobile */}
+      <dialog ref={descModalRef} className="modal modal-bottom md:modal-middle bottom-sheet" onClose={() => setShowDesc(false)}>
+        <div className="modal-box">
+          <h3 className="font-bold text-lg mb-3">{room.name}</h3>
+          {room.description && <Markdown>{room.description}</Markdown>}
+          <div className="modal-action">
+            <button className="btn btn-sm" onClick={() => setShowDesc(false)}>Close</button>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button>close</button>
+        </form>
+      </dialog>
+
       {/* Note detail modal */}
-      <dialog ref={viewNoteRef} className="modal" onClose={() => setViewingNote(null)}>
+      <dialog ref={viewNoteRef} className="modal modal-bottom md:modal-middle bottom-sheet" onClose={() => setViewingNote(null)}>
         {viewingNote && (
-          <div className="modal-box max-w-4xl max-h-[85vh] flex flex-row gap-4">
-            <div className="flex-1 overflow-y-auto">
+          <div className="modal-box md:max-w-4xl max-h-[85vh] flex flex-col md:flex-row gap-4">
+            <div className="flex-1 overflow-y-auto min-w-0">
               <h3 className="font-bold text-lg mb-1">{viewingNote.title}</h3>
               <p className="text-xs opacity-50 mb-4">
                 {getUserName(users, viewingNote.createdBy)} &middot; {new Date(viewingNote.updatedAt).toLocaleString()}
               </p>
               <Markdown>{viewingNote.content}</Markdown>
             </div>
-            <div className="flex flex-col gap-2 border-l border-base-200 pl-4 shrink-0">
+            <div className="flex flex-row md:flex-col gap-2 md:border-l border-t md:border-t-0 border-base-200 pt-3 md:pt-0 md:pl-4 shrink-0">
               <button
-                className="btn btn-outline btn-primary btn-sm"
+                className="btn btn-outline btn-primary btn-sm flex-1 md:flex-none"
                 onClick={() => {
                   setEditingNote(viewingNote);
                   setViewingNote(null);
@@ -442,7 +526,7 @@ export default function RoomPage({ user }: { user: User }) {
               >
                 <PencilIcon /> Edit
               </button>
-              <button className="btn btn-ghost btn-sm" onClick={() => setViewingNote(null)}>
+              <button className="btn btn-ghost btn-sm flex-1 md:flex-none" onClick={() => setViewingNote(null)}>
                 <XMarkIcon /> Close
               </button>
             </div>

@@ -48,20 +48,22 @@ function AuthShell() {
 
   return (
     <div className="min-h-screen bg-base-200">
-      <div className="navbar bg-base-100 px-6 border-b border-base-300">
-        <div className="flex-1">
-          <a href="/" className="text-2xl font-bold">StudyHub</a>
+      {/* Mobile navbar */}
+      <div className="md:hidden navbar bg-base-100 px-4 border-b border-base-300 gap-2 min-h-0 py-2">
+        <div className="flex-1 min-w-0">
+          <a href="/" className="text-lg font-bold shrink-0">Study Room</a>
         </div>
-        <div className="flex items-center gap-4">
-          <span className="text-sm opacity-70">{user.email}</span>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs opacity-70 truncate max-w-[120px]">{user.email}</span>
           <button
-            className="btn btn-outline btn-sm"
+            className="btn btn-outline btn-xs"
             onClick={() => signOut(auth)}
           >
             Sign Out
           </button>
         </div>
       </div>
+
       <Routes>
         <Route path="/rooms/:roomId" element={<RoomPage user={user} />} />
         <Route path="*" element={<DashboardPage user={user} />} />

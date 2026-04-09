@@ -24,6 +24,21 @@ export default $config({
       }
     );
 
+    new cloudflare.R2BucketCors("StudyHubBucketCors", {
+      accountId: process.env.CLOUDFLARE_DEFAULT_ACCOUNT_ID ?? "",
+      bucketName: bucket.name,
+      rules: [
+        {
+          allowed: {
+            origins: ["*"],
+            methods: ["GET"],
+            headers: ["*"],
+          },
+          maxAgeSeconds: 86400,
+        },
+      ],
+    });
+
     const hono = new sst.cloudflare.Worker("StudyHub", {
       url: true,
       handler: "./server/src/index.ts",
