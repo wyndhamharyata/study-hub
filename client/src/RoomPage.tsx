@@ -9,9 +9,11 @@ import {
   updateFlashcard,
   deleteFlashcard,
 } from "./useFlashcards";
+import { useUsers, getUserName } from "./useUsers";
 import RoomFormModal from "./RoomFormModal";
 import NoteFormModal from "./NoteFormModal";
 import FlashcardFormModal from "./FlashcardFormModal";
+import { ListIcon, GridIcon } from "./Icons";
 import type { Note } from "./useNotes";
 import type { Flashcard } from "./useFlashcards";
 
@@ -20,11 +22,14 @@ export default function RoomPage({ user }: { user: User }) {
   const navigate = useNavigate();
   const { rooms } = useRooms();
   const room = rooms.find((r) => r.id === roomId);
+  const { users } = useUsers();
 
   const { notes, loading: notesLoading } = useNotes(roomId!);
   const { flashcards, loading: cardsLoading } = useFlashcards(roomId!);
 
   const [tab, setTab] = useState<"notes" | "flashcards">("notes");
+  const [notesView, setNotesView] = useState<"list" | "grid">("list");
+  const [cardsView, setCardsView] = useState<"list" | "grid">("grid");
   const [editRoom, setEditRoom] = useState(false);
   const [noteModal, setNoteModal] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
@@ -127,6 +132,9 @@ export default function RoomPage({ user }: { user: User }) {
             {room.description && (
               <p className="opacity-70 mt-1">{room.description}</p>
             )}
+            <p className="text-xs opacity-50 mt-1">
+              Created by {getUserName(users, room.createdBy)} &middot; {new Date(room.createdAt).toLocaleDateString()}
+            </p>
           </div>
           {isOwner && (
             <div className="flex gap-2">
@@ -166,7 +174,23 @@ export default function RoomPage({ user }: { user: User }) {
       {/* Notes tab */}
       {tab === "notes" && (
         <div>
-          <div className="flex justify-end mb-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="join">
+              <button
+                className={`join-item btn btn-sm ${notesView === "list" ? "btn-active" : ""}`}
+                onClick={() => setNotesView("list")}
+                title="List view"
+              >
+                <ListIcon />
+              </button>
+              <button
+                className={`join-item btn btn-sm ${notesView === "grid" ? "btn-active" : ""}`}
+                onClick={() => setNotesView("grid")}
+                title="Grid view"
+              >
+                <GridIcon />
+              </button>
+            </div>
             <button
               className="btn btn-primary btn-sm"
               onClick={() => setNoteModal(true)}
@@ -182,15 +206,23 @@ export default function RoomPage({ user }: { user: User }) {
           ) : notes.length === 0 ? (
             <p className="text-center opacity-60 py-8">No notes yet.</p>
           ) : (
-            <div className="flex flex-col gap-4">
+            <div
+              className={
+                notesView === "grid"
+                  ? "grid grid-cols-1 md:grid-cols-2 gap-4"
+                  : "flex flex-col gap-4"
+              }
+            >
               {notes.map((note) => (
                 <div key={note.id} className="card bg-base-100 shadow-sm">
                   <div className="card-body">
                     <h3 className="card-title text-base">{note.title}</h3>
-                    <p className="whitespace-pre-wrap text-sm">{note.content}</p>
+                    <p className={`whitespace-pre-wrap text-sm ${notesView === "grid" ? "line-clamp-4" : ""}`}>
+                      {note.content}
+                    </p>
                     <div className="flex items-center justify-between mt-2">
                       <span className="text-xs opacity-50">
-                        {new Date(note.updatedAt).toLocaleString()}
+                        {getUserName(users, note.createdBy)} &middot; {new Date(note.updatedAt).toLocaleString()}
                       </span>
                       <div className="flex gap-1">
                         <button
@@ -218,7 +250,23 @@ export default function RoomPage({ user }: { user: User }) {
       {/* Flashcards tab */}
       {tab === "flashcards" && (
         <div>
-          <div className="flex justify-end mb-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="join">
+              <button
+                className={`join-item btn btn-sm ${cardsView === "list" ? "btn-active" : ""}`}
+                onClick={() => setCardsView("list")}
+                title="List view"
+              >
+                <ListIcon />
+              </button>
+              <button
+                className={`join-item btn btn-sm ${cardsView === "grid" ? "btn-active" : ""}`}
+                onClick={() => setCardsView("grid")}
+                title="Grid view"
+              >
+                <GridIcon />
+              </button>
+            </div>
             <button
               className="btn btn-primary btn-sm"
               onClick={() => setCardModal(true)}
@@ -234,11 +282,21 @@ export default function RoomPage({ user }: { user: User }) {
           ) : flashcards.length === 0 ? (
             <p className="text-center opacity-60 py-8">No flashcards yet.</p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div
+              className={
+                cardsView === "grid"
+                  ? "grid grid-cols-1 md:grid-cols-2 gap-4"
+                  : "flex flex-col gap-4"
+              }
+            >
               {flashcards.map((card) => (
                 <div
                   key={card.id}
-                  className="card bg-base-100 shadow-sm cursor-pointer"
+                  className={`card shadow-sm cursor-pointer transition-colors ${
+                    flipped[card.id]
+                      ? "bg-success/15"
+                      : "bg-warning/15"
+                  }`}
                   onClick={() =>
                     setFlipped((prev) => ({
                       ...prev,
@@ -247,15 +305,21 @@ export default function RoomPage({ user }: { user: User }) {
                   }
                 >
                   <div className="card-body">
-                    <div className="badge badge-outline badge-sm mb-1">
+                    <div
+                      className={`badge badge-sm mb-1 ${
+                        flipped[card.id]
+                          ? "badge-success"
+                          : "badge-warning"
+                      }`}
+                    >
                       {flipped[card.id] ? "Answer" : "Question"}
                     </div>
                     <p className="whitespace-pre-wrap">
                       {flipped[card.id] ? card.answer : card.question}
                     </p>
                     <div className="flex items-center justify-between mt-2">
-                      <span className="text-xs opacity-40">
-                        Click to {flipped[card.id] ? "show question" : "reveal answer"}
+                      <span className="text-xs opacity-50">
+                        {getUserName(users, card.createdBy)} &middot; Click to {flipped[card.id] ? "show question" : "reveal answer"}
                       </span>
                       <div
                         className="flex gap-1"
