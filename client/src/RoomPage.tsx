@@ -161,25 +161,33 @@ export default function RoomPage({ user }: { user: User }) {
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="p-6">
-          <div role="tablist" className="tabs tabs-bordered mb-6">
-            <button
-              role="tab"
-              className={`tab ${tab === "notes" ? "tab-active" : ""}`}
-              onClick={() => setTab("notes")}
-            >
-              Notes
-            </button>
-            <button
-              role="tab"
-              className={`tab ${tab === "flashcards" ? "tab-active" : ""}`}
-              onClick={() => setTab("flashcards")}
-            >
-              Flashcards
-            </button>
-          </div>
+        {/* Side menu + content layout */}
+        <div className="flex flex-col md:flex-row">
+          {/* Side menu */}
+          <ul className="menu gap-1 md:w-56 md:min-h-[300px] menu-horizontal md:menu-vertical w-full border-b md:border-b-0 md:border-r border-base-200 p-4">
+            <li className="menu-title hidden md:block">Sections</li>
+            <li>
+              <button
+                className={`rounded-sm ${tab === "notes" ? "bg-accent/15 font-semibold" : ""}`}
+                onClick={() => setTab("notes")}
+              >
+                Notes
+                <span className="badge badge-sm">{notes.length}</span>
+              </button>
+            </li>
+            <li>
+              <button
+                className={`rounded-sm ${tab === "flashcards" ? "bg-accent/15 font-semibold" : ""}`}
+                onClick={() => setTab("flashcards")}
+              >
+                Flashcards
+                <span className="badge badge-sm">{flashcards.length}</span>
+              </button>
+            </li>
+          </ul>
 
+          {/* Content area */}
+          <div className="flex-1 min-w-0 p-6 bg-base-200 shadow-inner rounded-br-box">
           {/* Notes section */}
           {tab === "notes" && (
             <div>
@@ -358,6 +366,7 @@ export default function RoomPage({ user }: { user: User }) {
               )}
             </div>
           )}
+          </div>
         </div>
       </div>
 
