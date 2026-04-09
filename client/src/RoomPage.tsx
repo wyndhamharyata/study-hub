@@ -2,7 +2,10 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import type { User } from "firebase/auth";
 import { useRooms, updateRoom, deleteRoom } from "./useRooms";
+import { useNotes, createNote, updateNote, deleteNote } from "./useNotes";
 import RoomFormModal from "./RoomFormModal";
+import NoteFormModal from "./NoteFormModal";
+import type { Note } from "./useNotes";
 
 export default function RoomPage({ user }: { user: User }) {
   const { roomId } = useParams<{ roomId: string }>();
@@ -10,8 +13,12 @@ export default function RoomPage({ user }: { user: User }) {
   const { rooms } = useRooms();
   const room = rooms.find((r) => r.id === roomId);
 
+  const { notes, loading: notesLoading } = useNotes(roomId!);
+
   const [tab, setTab] = useState<"notes" | "flashcards">("notes");
   const [editRoom, setEditRoom] = useState(false);
+  const [noteModal, setNoteModal] = useState(false);
+  const [editingNote, setEditingNote] = useState<Note | null>(null);
 
   const isOwner = room?.createdBy === user.uid;
 
@@ -27,6 +34,32 @@ export default function RoomPage({ user }: { user: User }) {
     if (confirm("Delete this room and all its contents?")) {
       deleteRoom(roomId!);
       navigate("/");
+    }
+  }
+
+  // Notes handlers
+  function handleCreateNote(data: { title: string; content: string }) {
+    const id = crypto.randomUUID();
+    createNote(roomId!, {
+      id,
+      title: data.title,
+      content: data.content,
+      createdBy: user.uid,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    setNoteModal(false);
+  }
+
+  function handleEditNote(data: { title: string; content: string }) {
+    if (!editingNote) return;
+    updateNote(roomId!, editingNote.id, data);
+    setEditingNote(null);
+  }
+
+  function handleDeleteNote(noteId: string) {
+    if (confirm("Delete this note?")) {
+      deleteNote(roomId!, noteId);
     }
   }
 
@@ -103,8 +136,61 @@ export default function RoomPage({ user }: { user: User }) {
             </button>
           </div>
 
+          {/* Notes section */}
           {tab === "notes" && (
-            <p className="text-center opacity-60 py-8">Notes coming soon...</p>
+            <div>
+              <div className="flex items-center justify-end mb-4">
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => setNoteModal(true)}
+                >
+                  + Add Note
+                </button>
+              </div>
+
+              {notesLoading ? (
+                <div className="flex justify-center p-8">
+                  <span className="loading loading-spinner" />
+                </div>
+              ) : notes.length === 0 ? (
+                <p className="text-center opacity-60 py-8">No notes yet.</p>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  {notes.map((note) => (
+                    <div
+                      key={note.id}
+                      className="card bg-base-100 shadow-sm"
+                    >
+                      <div className="card-body">
+                        <h3 className="card-title text-base">{note.title}</h3>
+                        <p className="whitespace-pre-wrap">
+                          {note.content}
+                        </p>
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-xs opacity-50">
+                            {new Date(note.updatedAt).toLocaleString()}
+                          </span>
+                          <div className="flex gap-1">
+                            <button
+                              className="btn btn-ghost btn-xs"
+                              onClick={() => setEditingNote(note)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="btn btn-ghost btn-xs text-error"
+                              onClick={() => handleDeleteNote(note.id)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           {tab === "flashcards" && (
@@ -113,13 +199,30 @@ export default function RoomPage({ user }: { user: User }) {
         </div>
       </div>
 
-      {/* Edit room modal */}
+      {/* Modals */}
       <RoomFormModal
         open={editRoom}
         onClose={() => setEditRoom(false)}
         onSubmit={handleEditRoom}
         initialValues={{ name: room.name, description: room.description }}
         title="Edit Room"
+      />
+      <NoteFormModal
+        open={noteModal}
+        onClose={() => setNoteModal(false)}
+        onSubmit={handleCreateNote}
+        title="Add Note"
+      />
+      <NoteFormModal
+        open={!!editingNote}
+        onClose={() => setEditingNote(null)}
+        onSubmit={handleEditNote}
+        initialValues={
+          editingNote
+            ? { title: editingNote.title, content: editingNote.content }
+            : undefined
+        }
+        title="Edit Note"
       />
     </div>
   );
