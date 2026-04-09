@@ -72,11 +72,15 @@ Fitur tambahan dari checkpoint-1:
 Fitur tambahan dari checkpoint-2:
 - Markdown rendering untuk deskripsi room dan konten notes (`react-markdown` + Tailwind Typography)
 - Side menu navigation (menggantikan tabs) dengan DaisyUI menu component
-- **Room banner image** via Cloudflare R2 storage — upload dalam modal, tampil sebagai hero image dan card background
-- Note detail modal dengan full markdown rendering dan scroll
+- **Room banner image** via Cloudflare R2 — drag-and-drop upload dengan inline preview, tampil sebagai hero image dan card background (frosted glass overlay)
+- Note detail modal dengan full markdown rendering, scrollable, action buttons di samping
 - Card expand animation saat navigasi dari room list ke room detail
 - Room detail sebagai satu card besar dengan debossed content area
-- Seluruh card pada room list menjadi touch target (click navigates to room)
+- **Flashcard drag-and-drop reorder** — urutan tersimpan di Firebase, konsisten untuk semua user (@dnd-kit)
+- **Mobile bottom sheet** — modal tampil sebagai bottom sheet dengan slide-up animation
+- **Responsive layout** — sidebar room info pada desktop, compact navbar pada mobile, floating profile pada room detail, inline profile pada dashboard
+- Description read-more modal pada mobile (truncated 3 baris + "Read more")
+- Seluruh room card menjadi clickable touch target
 - View toggle menggunakan icon (list/grid) dengan `btn-primary` active state
 
 ## Cara Menjalankan
@@ -124,7 +128,7 @@ VITE_FIREBASE_MEASUREMENT_ID=...
   /users/{uid}          → { id, name, email, verified }
   /rooms/{roomId}       → { id, name, description, createdBy, createdAt, bannerUrl? }
   /notes/{roomId}/{id}  → { id, title, content, createdBy, createdAt, updatedAt }
-  /flashcards/{roomId}/{id} → { id, question, answer, createdBy, createdAt, updatedAt }
+  /flashcards/{roomId}/{id} → { id, question, answer, createdBy, createdAt, updatedAt, order? }
 ```
 
 ## Domain
