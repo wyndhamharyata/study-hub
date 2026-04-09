@@ -9,6 +9,7 @@ export interface Flashcard {
   createdBy: string;
   createdAt: number;
   updatedAt: number;
+  order?: number;
 }
 
 export function useFlashcards(roomId: string) {
@@ -22,7 +23,9 @@ export function useFlashcards(roomId: string) {
       const data = snapshot.val() as Record<string, Flashcard> | null;
       setFlashcards(
         data
-          ? Object.values(data).sort((a, b) => b.createdAt - a.createdAt)
+          ? Object.values(data).sort(
+              (a, b) => (a.order ?? a.createdAt) - (b.order ?? b.createdAt)
+            )
           : []
       );
       setLoading(false);
@@ -34,7 +37,10 @@ export function useFlashcards(roomId: string) {
 }
 
 export function createFlashcard(roomId: string, card: Flashcard) {
-  return set(ref(db, `studyhub/flashcards/${roomId}/${card.id}`), card);
+  return set(ref(db, `studyhub/flashcards/${roomId}/${card.id}`), {
+    ...card,
+    order: card.order ?? card.createdAt,
+  });
 }
 
 export function updateFlashcard(
@@ -50,4 +56,15 @@ export function updateFlashcard(
 
 export function deleteFlashcard(roomId: string, cardId: string) {
   return remove(ref(db, `studyhub/flashcards/${roomId}/${cardId}`));
+}
+
+export function reorderFlashcards(
+  roomId: string,
+  updates: { id: string; order: number }[]
+) {
+  const batch: Record<string, number> = {};
+  for (const { id, order } of updates) {
+    batch[`studyhub/flashcards/${roomId}/${id}/order`] = order;
+  }
+  return update(ref(db), batch);
 }
