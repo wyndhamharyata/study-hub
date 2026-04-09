@@ -1,0 +1,18 @@
+{
+  "name": "studyhub",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "sst dev",
+    "deploy": "cd client && npm run build && cd .. && sst deploy"
+  },
+  "dependencies": {
+    "hono": "^4.8.3",
+    "sst": "3.17.8"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "4.20250617.0",
+    "@tsconfig/node22": "^22.0.2"
+  }
+}
