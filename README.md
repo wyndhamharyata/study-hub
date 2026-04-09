@@ -47,7 +47,7 @@ Platform kolaborasi belajar real-time berbasis cloud. Pengguna dapat membuat stu
 
 ## Branch & Progress
 
-### `checkpoint-1` — Fondasi (20%)
+### `checkpoint-1` — Fondasi (35%)
 
 Fitur yang sudah selesai:
 - Project scaffold (Hono + React + Vite + SST + Tailwind/DaisyUI)
@@ -57,7 +57,7 @@ Fitur yang sudah selesai:
 - Deployment ke Cloudflare Workers
 - DaisyUI theme (light + dark mode)
 
-### `checkpoint-2` — Fitur Utama (50%)
+### `checkpoint-2` — Fitur Utama (65%)
 
 Fitur tambahan dari checkpoint-1:
 - Notes CRUD: create, read (real-time), update, delete
