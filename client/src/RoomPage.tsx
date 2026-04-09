@@ -3,9 +3,17 @@ import { useParams, useNavigate } from "react-router";
 import type { User } from "firebase/auth";
 import { useRooms, updateRoom, deleteRoom } from "./useRooms";
 import { useNotes, createNote, updateNote, deleteNote } from "./useNotes";
+import {
+  useFlashcards,
+  createFlashcard,
+  updateFlashcard,
+  deleteFlashcard,
+} from "./useFlashcards";
 import RoomFormModal from "./RoomFormModal";
 import NoteFormModal from "./NoteFormModal";
+import FlashcardFormModal from "./FlashcardFormModal";
 import type { Note } from "./useNotes";
+import type { Flashcard } from "./useFlashcards";
 
 export default function RoomPage({ user }: { user: User }) {
   const { roomId } = useParams<{ roomId: string }>();
@@ -14,11 +22,15 @@ export default function RoomPage({ user }: { user: User }) {
   const room = rooms.find((r) => r.id === roomId);
 
   const { notes, loading: notesLoading } = useNotes(roomId!);
+  const { flashcards, loading: cardsLoading } = useFlashcards(roomId!);
 
   const [tab, setTab] = useState<"notes" | "flashcards">("notes");
   const [editRoom, setEditRoom] = useState(false);
   const [noteModal, setNoteModal] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
+  const [cardModal, setCardModal] = useState(false);
+  const [editingCard, setEditingCard] = useState<Flashcard | null>(null);
+  const [flipped, setFlipped] = useState<Record<string, boolean>>({});
 
   const isOwner = room?.createdBy === user.uid;
 
@@ -60,6 +72,32 @@ export default function RoomPage({ user }: { user: User }) {
   function handleDeleteNote(noteId: string) {
     if (confirm("Delete this note?")) {
       deleteNote(roomId!, noteId);
+    }
+  }
+
+  // Flashcard handlers
+  function handleCreateCard(data: { question: string; answer: string }) {
+    const id = crypto.randomUUID();
+    createFlashcard(roomId!, {
+      id,
+      question: data.question,
+      answer: data.answer,
+      createdBy: user.uid,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    setCardModal(false);
+  }
+
+  function handleEditCard(data: { question: string; answer: string }) {
+    if (!editingCard) return;
+    updateFlashcard(roomId!, editingCard.id, data);
+    setEditingCard(null);
+  }
+
+  function handleDeleteCard(cardId: string) {
+    if (confirm("Delete this flashcard?")) {
+      deleteFlashcard(roomId!, cardId);
     }
   }
 
@@ -193,8 +231,82 @@ export default function RoomPage({ user }: { user: User }) {
             </div>
           )}
 
+          {/* Flashcards section */}
           {tab === "flashcards" && (
-            <p className="text-center opacity-60 py-8">Flashcards coming soon...</p>
+            <div>
+              <div className="flex items-center justify-end mb-4">
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => setCardModal(true)}
+                >
+                  + Add Flashcard
+                </button>
+              </div>
+
+              {cardsLoading ? (
+                <div className="flex justify-center p-8">
+                  <span className="loading loading-spinner" />
+                </div>
+              ) : flashcards.length === 0 ? (
+                <p className="text-center opacity-60 py-8">No flashcards yet.</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {flashcards.map((card) => (
+                    <div
+                      key={card.id}
+                      className={`card shadow-sm cursor-pointer transition-colors ${
+                        flipped[card.id]
+                          ? "bg-success/15"
+                          : "bg-warning/15"
+                      }`}
+                      onClick={() =>
+                        setFlipped((prev) => ({
+                          ...prev,
+                          [card.id]: !prev[card.id],
+                        }))
+                      }
+                    >
+                      <div className="card-body">
+                        <div
+                          className={`badge badge-sm mb-1 ${
+                            flipped[card.id]
+                              ? "badge-success"
+                              : "badge-warning"
+                          }`}
+                        >
+                          {flipped[card.id] ? "Answer" : "Question"}
+                        </div>
+                        <p className="whitespace-pre-wrap">
+                          {flipped[card.id] ? card.answer : card.question}
+                        </p>
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-xs opacity-50">
+                            Click to {flipped[card.id] ? "show question" : "reveal answer"}
+                          </span>
+                          <div
+                            className="flex gap-1"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              className="btn btn-ghost btn-xs"
+                              onClick={() => setEditingCard(card)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="btn btn-ghost btn-xs text-error"
+                              onClick={() => handleDeleteCard(card.id)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -223,6 +335,23 @@ export default function RoomPage({ user }: { user: User }) {
             : undefined
         }
         title="Edit Note"
+      />
+      <FlashcardFormModal
+        open={cardModal}
+        onClose={() => setCardModal(false)}
+        onSubmit={handleCreateCard}
+        title="Add Flashcard"
+      />
+      <FlashcardFormModal
+        open={!!editingCard}
+        onClose={() => setEditingCard(null)}
+        onSubmit={handleEditCard}
+        initialValues={
+          editingCard
+            ? { question: editingCard.question, answer: editingCard.answer }
+            : undefined
+        }
+        title="Edit Flashcard"
       />
     </div>
   );
