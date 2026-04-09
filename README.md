@@ -1,4 +1,4 @@
-# StudyHub — Checkpoint 3
+# StudyHub — Checkpoint 3 (95%)
 
 Platform kolaborasi belajar real-time berbasis cloud. Pengguna dapat membuat study room, berbagi catatan, dan berlatih dengan flashcard.
 
