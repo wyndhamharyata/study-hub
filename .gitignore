@@ -1,0 +1,7 @@
+.sst
+node_modules
+*.env*
+!*.env.example
+/dist
+sst-env.d.ts
+.wrangler
