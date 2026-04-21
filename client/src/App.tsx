@@ -47,9 +47,9 @@ function AuthShell() {
   }
 
   return (
-    <div className="min-h-screen bg-base-200">
+    <div className="min-h-screen">
       {/* Mobile navbar */}
-      <div className="md:hidden navbar bg-base-100 px-4 border-b border-base-300 gap-2 min-h-0 py-2">
+      <div className="md:hidden navbar bg-base-100/80 backdrop-blur px-4 border-b border-base-300 gap-2 min-h-0 py-2">
         <div className="flex-1 min-w-0">
           <a href="/" className="text-lg font-bold shrink-0">Study Room</a>
         </div>

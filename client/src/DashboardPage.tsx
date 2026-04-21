@@ -93,7 +93,7 @@ export default function DashboardPage({ user }: { user: User }) {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <div className="flex items-center justify-between mb-6 gap-4">
+      <div className="flex items-center justify-between mb-6 gap-4 bg-base-100/80 backdrop-blur rounded-box shadow-sm px-4 py-3">
         <h2 className="text-2xl font-bold shrink-0">StudyHub</h2>
         <div className="flex items-center gap-2">
           <span className="hidden md:inline text-xs opacity-70">{user.email}</span>

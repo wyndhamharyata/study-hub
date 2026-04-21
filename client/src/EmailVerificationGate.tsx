@@ -33,8 +33,8 @@ export default function EmailVerificationGate({ user }: { user: User }) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-base-200">
-      <div className="card w-full max-w-sm bg-base-100 shadow-xl">
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="card w-full max-w-sm bg-base-100/90 backdrop-blur shadow-xl">
         <div className="card-body items-center text-center">
           <h2 className="card-title text-2xl">Verify Your Email</h2>
           <p className="mt-2">

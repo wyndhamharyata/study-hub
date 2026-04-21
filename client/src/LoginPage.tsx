@@ -46,8 +46,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-base-200">
-      <div className="card w-full max-w-sm bg-base-100 shadow-xl">
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="card w-full max-w-sm bg-base-100/90 backdrop-blur shadow-xl">
         <div className="card-body">
           <h2 className="card-title justify-center text-2xl">
             {isSignUp ? "Create Account" : "Sign In"}

@@ -198,7 +198,7 @@ export default function RoomPage({ user }: { user: User }) {
   return (
     <div className="max-w-5xl mx-auto p-6">
       {/* Desktop floating profile */}
-      <div className="hidden md:flex fixed top-3 right-6 z-50 items-center gap-2 bg-base-100 rounded-box shadow-sm px-3 py-1.5">
+      <div className="hidden md:flex fixed top-3 right-6 z-50 items-center gap-2 bg-base-100/80 backdrop-blur rounded-box shadow-sm px-3 py-1.5">
         <span className="text-xs opacity-70">{user.email}</span>
         <button
           className="btn btn-outline btn-xs"
@@ -209,7 +209,7 @@ export default function RoomPage({ user }: { user: User }) {
       </div>
 
       <button
-        className="btn btn-ghost btn-sm mb-4"
+        className="btn btn-sm mb-4 bg-base-100/80 backdrop-blur border-none shadow-sm"
         onClick={() => navigate("/")}
       >
         &larr; Back
